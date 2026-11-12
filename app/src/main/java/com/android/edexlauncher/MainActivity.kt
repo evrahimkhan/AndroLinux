@@ -51,7 +51,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
 data class AppInfo(val label: String, val packageName: String, val intent: Intent)
 
 @Composable
