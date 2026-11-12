@@ -57,9 +57,9 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0'
 
-    // Termux Terminal View & Shared
-    implementation 'com.termux:terminal-view:0.80.0'
-    implementation 'com.termux:terminal-shared:0.80.0'
+    // Termux Terminal View & Shared on Maven Central
+    implementation 'io.github.termux:terminal-view:0.80.0'
+    implementation 'io.github.termux:terminal-shared:0.80.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
