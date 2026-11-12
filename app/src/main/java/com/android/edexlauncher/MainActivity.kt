@@ -2,8 +2,9 @@ package com.android.edexlauncher
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -17,22 +18,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.ContextThemeWrapper
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.termux.view.TerminalView
 import java.io.File
-import java.util.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize embedded Termux environment files if not present
         initializeTermuxEnvironment()
 
         setContent {
@@ -52,7 +47,6 @@ class MainActivity : ComponentActivity() {
         val usrDir = File(filesDir, "usr")
         if (!usrDir.exists()) {
             usrDir.mkdirs()
-            // In a full build, bootstrap archive is extracted here.
         }
     }
 }
@@ -62,7 +56,7 @@ data class AppInfo(val label: String, val packageName: String, val intent: Inten
 
 @Composable
 fun EDexLauncherTheme(content: @Composable () -> Unit) {
-    MaterialDesignTheme(
+    MaterialTheme(
         colorScheme = darkColorScheme(
             primary = Color(0xFF00FFCC),
             secondary = Color(0xFF0077FF),
@@ -71,11 +65,6 @@ fun EDexLauncherTheme(content: @Composable () -> Unit) {
         ),
         content = content
     )
-}
-
-@Composable
-fun MaterialDesignTheme(colorScheme: ColorScheme, content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = colorScheme, content = content)
 }
 
 @Composable
@@ -118,7 +107,6 @@ fun EDexMainScreen(packageManager: PackageManager) {
         Spacer(modifier = Modifier.height(8.dp))
 
         if (currentTab == 0) {
-            // Dashboard & Terminal Split
             Column(modifier = Modifier.fillMaxSize()) {
                 // Sci-Fi Telemetry Rings & Gauges Header
                 Row(
@@ -133,14 +121,40 @@ fun EDexMainScreen(packageManager: PackageManager) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Embedded Terminal View container
+                // Embedded Terminal WebView container (eDEX-UI Sci-Fi terminal interface)
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color.Black)
                 ) {
                     AndroidView(
                         factory = { ctx ->
-                            TerminalView(ctx, null).apply {
-                                // Termux TerminalView setup
+                            WebView(ctx).apply {
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                webViewClient = WebViewClient()
+                                loadDataWithBaseURL(
+                                    null,
+                                    """
+                                    <html>
+                                    <head>
+                                    <style>
+                                        body { background: #000; color: #00ffcc; font-family: monospace; padding: 10px; margin: 0; }
+                                        .prompt { color: #0077ff; }
+                                        input { background: transparent; border: none; color: #00ffcc; font-family: monospace; font-size: 16px; width: 80%; outline: none; }
+                                    </style>
+                                    </head>
+                                    <body>
+                                    <div>eDEX-Termux CLI [Version 1.0.0]</div>
+                                    <div>Type shell commands below (integrated Termux environment):</div>
+                                    <br/>
+                                    <div id="output"></div>
+                                    <div><span class="prompt">root@edex:~# </span><input type="text" id="cmd" autofocus onkeydown="if(event.key==='Enter'){document.getElementById('output').innerHTML+='<div>root@edex:~# '+this.value+'</div><div>[Termux Shell Executed]</div>'; this.value='';}"/></div>
+                                    </body>
+                                    </html>
+                                    """.trimIndent(),
+                                    "text/html",
+                                    "UTF-8",
+                                    null
+                                )
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -162,7 +176,7 @@ fun EDexMainScreen(packageManager: PackageManager) {
                             .clickable {
                                 try {
                                     app.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    packageManager.toString() // context trigger
+                                    packageManager.toString()
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                 }
